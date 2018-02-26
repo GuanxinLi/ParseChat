@@ -40,18 +40,14 @@ class ViewController: UIViewController {
         newUser.password = passwordTextView.text
         // Check if the username or the password is empty
         if ((newUser.username?.isEmpty)! || (newUser.password?.isEmpty)!) {
-            let alertController = UIAlertController(title: "Title", message: "Message", preferredStyle: .alert)
+            let alertController = UIAlertController(title: "Signup Failed", message: "Please enter a valid username or password to sign up.", preferredStyle: .alert)
             // create a cancel action
             let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { (action) in
-                self.loginButton.isHighlighted = false
-                self.signupButton.isHighlighted = false
+                
             }
             alertController.addAction(cancelAction)
             
             present(alertController, animated: true) {
-                print("in here")
-                self.loginButton.isHighlighted = false
-                self.signupButton.isHighlighted = false
             }
         }
         
@@ -62,7 +58,16 @@ class ViewController: UIViewController {
                 print(error.localizedDescription)
             } else {
                 print("User Registered successfully")
-                // manually segue to logged in view
+                self.performSegue(withIdentifier: "loginSegue", sender: nil)
+                let registerSuccessController = UIAlertController(title: "Succeed", message: "Registered successfully", preferredStyle: .alert)
+                let okAction = UIAlertAction(title: "Ok", style: .cancel) { (action) in
+                    
+                }
+                registerSuccessController.addAction(okAction)
+                self.present(registerSuccessController, animated: true) {
+                    self.passwordTextView.text = ""
+                    self.usernameTextView.text = ""
+                }
             }
         }
     }
@@ -74,7 +79,14 @@ class ViewController: UIViewController {
         
         PFUser.logInWithUsername(inBackground: username, password: password) { (user: PFUser?, error: Error?) in
             if let error = error {
-                print ("Error is in here")
+                let loginAlertController = UIAlertController(title: "Login Failed", message: "Incorrect username or password.", preferredStyle: .alert)
+                let okAction = UIAlertAction(title: "Ok", style: .default) { (action) in
+                    
+                }
+                loginAlertController.addAction(okAction)
+                
+                self.present(loginAlertController, animated: true) {
+                }
                 print("User log in failed: \(error.localizedDescription)")
             } else {
                 print("User logged in successfully")

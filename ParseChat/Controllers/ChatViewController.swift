@@ -18,17 +18,15 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     @IBOutlet weak var messageTextField: UITextField!
     @IBOutlet weak var sendButton: UIButton!
     //var chatMessage = PFObject(className: "Message")
-    var chatMessage: [PFObject]!
+    var chatMessage: [PFObject]? = []
     @IBAction func sendButton(_ sender: UIButton) {
-        sender.isSelected = true
         let sendObject = PFObject(className: "Message")
         sendObject["text"] = messageTextField.text ?? ""
-        sendObject["user"] = PFUser.current()!
+        sendObject["user"] = PFUser.current()
         sendObject.saveInBackground { (success, error) in
             if success {
                 print("The message was saved!")
                 self.messageTextField.text = ""
-                
             } else if let error = error {
                 print("Problem saving message: \(error.localizedDescription)")
             }
@@ -42,32 +40,30 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
         tableView.delegate = self
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 50
-        
         Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(ChatViewController.onTimer), userInfo: nil, repeats: true)
     }
     
     
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return chatMessage?.count ?? 0
+        if let chatMessage = chatMessage {
+            return chatMessage.count
+        } else {
+            return 0
+        }
     }
     
     
     @objc func onTimer() {
-        print("In the onTimer method")
         let query = PFQuery(className: "Message")
+        query.includeKey("user")
         query.addDescendingOrder("createdAt")
-        
-        // fetch data asynchronously
         query.findObjectsInBackground { (posts: [PFObject]?, error: Error?) in
             if let posts = posts {
                 self.chatMessage = posts
-                
-                DispatchQueue.main.async {
-                    self.tableView.reloadData()
-                }
+                self.tableView.reloadData()
             } else {
-                print("\(error?.localizedDescription)")
+                print("Problem refreshing message: \(error!.localizedDescription)")
             }
         }
     }
@@ -78,20 +74,21 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ChatCell", for: indexPath) as! ChatCell
-        let messages = chatMessage[indexPath.row]
-        
-        if let msgString = messages["text"] as? String {
-            print("The message string is: \(msgString)")
+        let messages = chatMessage?[indexPath.row]
+        if let msgString = messages?["text"] as? String {
             cell.messageLabel.text = msgString
         }
         
-        if let user = messages["user"] as? String {
+        if let user = messages?["user"] as? PFUser {
             print("The user is: \(user)")
-            cell.usernameLabel.text = user
+            cell.usernameLabel.text = user.username
         } else {
             // No user found, set default username
             cell.usernameLabel.text = "🤖"
         }
+
+        
+        
         return cell
     }
     
